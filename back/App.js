@@ -1,7 +1,9 @@
 const express = require('express');
+const path = require('path');
 const bodyParser = require('body-parser');
 const modbusClient = require('./ModbusTCPClient');
 const app = express();
+
 
 app.use(bodyParser.json());
 
@@ -51,6 +53,16 @@ app.post('/api/modbus/write-thermostat-control', async (req, res) => {
         res.status(500).send(error.message);
     }
 });
+
+
+// React 빌드 폴더 제공
+app.use(express.static(path.join(__dirname, '../front/build')));
+
+// 모든 요청을 React 앱으로 리디렉션
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, '../front/build', 'index.html'));
+});
+
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
