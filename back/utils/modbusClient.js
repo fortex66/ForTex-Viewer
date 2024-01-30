@@ -1,9 +1,12 @@
 // ModbusTCPClient.js
 const Modbus = require('modbus-serial');
 const client = new Modbus();
+const dotenv = require("dotenv"); //환경변수 처리
+dotenv.config();
+
 
 // PLC 연결 설정
-const HOST = 'xxx.xxx.xxx.xxx';
+const HOST = process.env.TCP_HOST;
 const PORT = 502;
 
 // Modbus 클라이언트 설정 및 연결
@@ -92,6 +95,8 @@ async function writeThermostatControl(value) {
         throw error;
     }
 }
+
+
 
 module.exports = {
     readCurrentTemperature,
