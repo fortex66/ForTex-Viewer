@@ -1,21 +1,13 @@
 const modbusClient = require('../utils/modbusClient');
-const temperaturerecords = require('../models/temperatureRecord');
+const TemperatureRecord = require('../models/temperatureRecord'); // 모델 임포트
+const { Op } = require('sequelize'); // Sequelize 연산자 임포트
+
 
 exports.readCurrentTemperature = async (req, res) => {
     try {
         const data = await modbusClient.readCurrentTemperature();
-        const temperature = data.data[0];
-        const timestamp = new Date();
-
-        // 현재 온도를 데이터베이스에 저장
-        await temperaturerecords.create({
-            temperature: temperature,
-            timestamp: timestamp,
-        });
-
-        res.json(temperature);
+        res.json(data.data[0]);
     } catch (error) {
-        console.error("Failed to read and save current temperature:", error);
         res.status(500).send(error.message);
     }
 };
@@ -60,3 +52,21 @@ exports.writeThermostatControl = async (req, res) => {
     }
 };
 
+exports.readTemperatureHistory = async (req, res) => {
+    try {
+        const { startDate, endDate } = req.query;
+        const records = await TemperatureRecord.findAll({
+            where: {
+                timestamp: {
+                    [Op.between]: [new Date(startDate), new Date(endDate)]
+                }
+            },
+            order: [['timestamp', 'ASC']]
+        });
+        res.json(records);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+    }
+
+}

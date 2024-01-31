@@ -48,10 +48,11 @@ const Home = () => {
     const [tempStatus, setTempStatus] = useState(false);
     const [refreshSettingTemp, setRefreshSettingTemp] = useState(false);
     const [currentTempData, setCurrentTempData] = useState([]);
-    const [refreshInterval, setRefreshInterval] = useState(5000); // 기본값을 5초로 설정
+    const [refreshInterval, setRefreshInterval] = useState(10000); // 기본값을 10초로 설정
 
     // 데이터 소수점 처리
     const convertTemperature = (temp) => temp / 10;
+
 
     useEffect(() => {
         readSettingTemperature().then(response => {
@@ -59,16 +60,25 @@ const Home = () => {
         }).catch(error => console.error('Error:', error));
     }, [refreshSettingTemp]);
 
+
     useEffect(() => {
         const interval = setInterval(() => {
             readCurrentTemperature().then(response => {
                 const temp = convertTemperature(response.data);
                 setCurrentTemp(temp);
-                setCurrentTempData(prevData => [...prevData, { x: moment().valueOf(), y: temp }]);
+
+                setCurrentTempData(prevData => {
+                    const newData = [...prevData, { x: moment().valueOf(), y: temp }]
+                    if (newData.length > 60) {
+                        newData.shift(); // 배열의 첫 번째 요소 제거 -> 최소 10분(10초일 때) 
+                    }
+                    return newData;
+                });
             }).catch(error => console.error('Error:', error));
         }, refreshInterval);
         return () => clearInterval(interval);
     }, [refreshInterval]);
+
 
     useEffect(() => {
         readThermostatStatus().then(response => {
@@ -76,10 +86,12 @@ const Home = () => {
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
 
+
     // 설정 온도 변경
     const handleSetTempChange = (e) => {
         setSetTemp(e.target.value);
     };
+
 
     // 설정 온도 변경
     const handleSetTempSubmit = () => {
@@ -201,7 +213,6 @@ const Home = () => {
                         <InputContainer>
                         <Label>데이터 주기</Label>
                             <Select value={refreshInterval} onChange={handleIntervalChange}>
-                                <option value="5000">5초</option>
                                 <option value="10000">10초</option>
                                 <option value="30000">30초</option>
                                 <option value="60000">1분</option>
