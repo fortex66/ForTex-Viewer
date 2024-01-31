@@ -2,6 +2,11 @@
 const Modbus = require('modbus-serial');
 const client = new Modbus();
 const dotenv = require("dotenv"); //환경변수 처리
+const moment = require('moment-timezone'); // moment-timezone 패키지 사용
+
+
+const temperaturerecords = require('../models/temperatureRecord');
+const saveInterval = 10000; // 10초 주기로 저장
 dotenv.config();
 
 
@@ -98,10 +103,42 @@ async function writeThermostatControl(value) {
 
 
 
+// function getCurrentLocalDateTime() {
+//     // 서버의 로컬 시간대를 설정 (예: 'Asia/Seoul'로 서울 시간대 사용)
+//     const timeZone = 'Asia/Seoul';
+//     return moment().tz(timeZone).format();
+// }
+
+// 현재 온도를 주기적으로 데이터베이스에 저장하는 함수
+async function saveTemperaturePeriodically() {
+    try {
+        const data = await client.readInputRegisters(1000, 1);
+        let temperature = data.data[0] / 10; // 소수점 처리
+        //const timestamp = getCurrentLocalDateTime(); // 로컬 시간대 기준의 현재 시간을 얻음
+
+        const timestamp = new Date();
+        await temperaturerecords.create({
+            temperature: temperature,
+            timestamp: timestamp,
+        });
+
+        console.log('Temperature saved:', temperature, 'at', timestamp);
+    } catch (error) {
+        console.error("Failed to save temperature periodically:", error);
+    }
+}
+
+// 주기적 저장을 시작하는 함수
+function startPeriodicSave() {
+    setInterval(saveTemperaturePeriodically, saveInterval);
+}
+
+
 module.exports = {
     readCurrentTemperature,
     readSetTemperature,
     writeSetTemperature,
     readThermostatStatus,
-    writeThermostatControl
+    writeThermostatControl,
+    startPeriodicSave
 };

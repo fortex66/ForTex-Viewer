@@ -3,9 +3,13 @@ const bodyParser = require('body-parser');
 const modbusRoutes = require('./routes/modbusRoutes');
 const sequelize = require('./database/database'); // Sequelize 인스턴스 가져오기
 const app = express();
+const modbusClient = require('./utils/modbusClient');
+
 
 app.use(bodyParser.json());
 app.use('/api/modbus', modbusRoutes);
+
+modbusClient.startPeriodicSave();
 
 sequelize.authenticate()
     .then(() => {

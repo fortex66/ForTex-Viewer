@@ -1,9 +1,64 @@
-import React from 'react';
+import React, { useState } from 'react';
+import styled from 'styled-components';
+import { readTemperatureHistory } from '../services/api';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
-import styled from "styled-components";
+import moment from 'moment-timezone';
+import { Line } from 'react-chartjs-2';
+import 'chartjs-adapter-moment';
 
 const History = () => {
+    const [startDateTime, setStartDateTime] = useState('');
+    const [endDateTime, setEndDateTime] = useState('');
+    const [temperatureData, setTemperatureData] = useState([]);
+
+    const handleSearch = async () => {
+        try {
+            const response = await readTemperatureHistory(startDateTime, endDateTime);
+            setTemperatureData(response.data);
+        } catch (error) {
+            console.error('Error fetching temperature history:', error);
+        }
+    };
+
+    // 차트 데이터 설정
+    const chartData = {
+        labels: temperatureData.map(data => new Date(data.timestamp)),
+        datasets: [{
+            label: 'Current Temperature',
+            data: temperatureData.map(data => data.temperature),
+            fill: false,
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    };
+
+    const handleTimeChange = (value, type) => {
+        if (value) {
+            let timeString = value + ':00';
+            let currentDateTime = type === 'start' ? startDateTime : endDateTime;
+            currentDateTime = currentDateTime ? moment(currentDateTime) : moment();
+    
+            let [hours, minutes] = timeString.split(':');
+            currentDateTime.tz('Asia/Seoul').set({ hour: parseInt(hours), minute: parseInt(minutes) });
+    
+            let isoString = currentDateTime.format();
+            type === 'start' ? setStartDateTime(isoString) : setEndDateTime(isoString);
+        }
+    };
+    
+    const handleDateChange = (value, type) => {
+        if (value) {
+            let date = moment(value);
+            let currentDateTime = type === 'start' ? startDateTime : endDateTime;
+            currentDateTime = currentDateTime ? moment(currentDateTime) : moment();
+    
+            date.tz('Asia/Seoul').set({ year: date.year(), month: date.month(), date: date.date() });
+    
+            let isoString = date.format();
+            type === 'start' ? setStartDateTime(isoString) : setEndDateTime(isoString);
+        }
+    };
 
     return (
         <div>
@@ -11,8 +66,33 @@ const History = () => {
             <Body>
                 <Sidebar></Sidebar>
                 <Contents>
-                    <Name>온도 기록</Name>
-
+                    <Title>온도 로그</Title>
+                    <SearchArea>
+                        <DateInput
+                            type="date"
+                            value={startDateTime ? startDateTime.split('T')[0] : ""}
+                            onChange={(e) => handleDateChange(e.target.value, 'start')}
+                        />
+                        <TimeInput
+                            type="time"
+                            value={startDateTime ? startDateTime.split('T')[1].substring(0, 5) : ""}
+                            onChange={(e) => handleTimeChange(e.target.value, 'start')}
+                        />
+                        <DateInput
+                            type="date"
+                            value={endDateTime ? endDateTime.split('T')[0] : ""}
+                            onChange={(e) => handleDateChange(e.target.value, 'end')}
+                        />
+                        <TimeInput
+                            type="time"
+                            value={endDateTime ? endDateTime.split('T')[1].substring(0, 5): ""}
+                            onChange={(e) => handleTimeChange(e.target.value, 'end')}
+                        />
+                        <SearchButton onClick={handleSearch}>조회</SearchButton>
+                    </SearchArea>
+                    <ChartArea>
+                        <Line data={chartData} />
+                    </ChartArea>
                 </Contents>
             </Body>
         </div>
@@ -21,20 +101,54 @@ const History = () => {
 
 export default History;
 
+// Styled Components
+const Title = styled.h1`
+    font-size: 24px;
+    font-weight: bold;
+    margin-bottom: 20px;
+`;
+
 const Body = styled.div`
     display: flex;
-    width: 100%; // 전체 가로 폭을 사용하도록 설정
+    width: 100%;
 `;
 
 const Contents = styled.div`
-    flex-grow: 1; // 사용 가능한 공간을 모두 차지하도록 설정
-    padding: 20px; // 콘텐츠 내부 여백 설정
-    // 필요에 따라 추가적인 스타일 속성을 적용
+    flex-grow: 1;
+    padding: 20px;
 `;
 
+const SearchArea = styled.div`
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+`;
 
-const Name = styled.div`
-    font-size : 24px;
-    font-weight: bold;
-    margin: 5px 0px 5px 10px;
-`
+const DateInput = styled.input`
+    margin-right: 10px;
+`;
+
+const TimeInput = styled.input`
+    margin-right: 10px;
+`;
+
+const DurationSelect = styled.select`
+    margin-right: 10px;
+`;
+
+const SearchButton = styled.button`
+    padding: 5px 15px;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+
+    &:hover {
+        background-color: #0056b3;
+    }
+`;
+
+const ChartArea = styled.div`
+    // Add styling for chart area if needed
+`;
