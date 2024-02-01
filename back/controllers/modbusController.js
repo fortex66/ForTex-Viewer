@@ -70,3 +70,37 @@ exports.readTemperatureHistory = async (req, res) => {
     }
 
 }
+
+exports.readTemperatureHistory = async (req, res) => {
+    try {
+        const { startDate, endDate, interval } = req.query;
+        const intervalInSeconds = parseInt(interval || '60'); // 기본값 60초 (1분)
+
+        // 날짜 간격에 맞는 데이터만 조회
+        const records = await TemperatureRecord.findAll({
+            where: {
+                timestamp: {
+                    [Op.between]: [new Date(startDate), new Date(endDate)]
+                }
+            },
+            order: [['timestamp', 'ASC']]
+        });
+        console.log(intervalInSeconds);
+
+        // 필요한 경우 데이터 다운샘플링 (간격에 따라 데이터 필터링)
+        const filteredData = [];
+        let lastTimestamp = null;
+        records.forEach(record => {
+            const currentTimestamp = new Date(record.timestamp).getTime();
+            if (!lastTimestamp || currentTimestamp - lastTimestamp >= intervalInSeconds * 1000) {
+                filteredData.push(record);
+                lastTimestamp = currentTimestamp;
+            }
+        });
+
+        res.json(filteredData);
+    } catch (error) {
+        console.error(error);
+        res.status(500).send("Internal Server Error");
+    }
+};

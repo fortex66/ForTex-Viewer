@@ -26,8 +26,8 @@ export const writeThermostatControl = async (value) => {
 };
 
 // 온도 기록을 읽어오는 API 호출
-export const readTemperatureHistory = async (startDate, endDate) => {
+export const readTemperatureHistory = async (startDate, endDate, interval ) => {
     return axios.get('/api/modbus/temperature-history', {
-        params: { startDate, endDate }
+        params: { startDate, endDate, interval  }
     });
 };
