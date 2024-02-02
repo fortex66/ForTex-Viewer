@@ -50,13 +50,10 @@ const Home = () => {
     const [currentTempData, setCurrentTempData] = useState([]);
     const [refreshInterval, setRefreshInterval] = useState(10000); // 기본값을 10초로 설정
 
-    // 데이터 소수점 처리
-    const convertTemperature = (temp) => temp / 10;
-
 
     useEffect(() => {
         readSettingTemperature().then(response => {
-            setSettingTemp(convertTemperature(response.data));
+            setSettingTemp(response.data);
         }).catch(error => console.error('Error:', error));
     }, [refreshSettingTemp]);
 
@@ -64,11 +61,10 @@ const Home = () => {
     useEffect(() => {
         const interval = setInterval(() => {
             readCurrentTemperature().then(response => {
-                const temp = convertTemperature(response.data);
-                setCurrentTemp(temp);
+                setCurrentTemp(response.data);
 
                 setCurrentTempData(prevData => {
-                    const newData = [...prevData, { x: moment().valueOf(), y: temp }]
+                    const newData = [...prevData, { x: moment().valueOf(), y: response.data }]
                     if (newData.length > 60) {
                         newData.shift(); // 배열의 첫 번째 요소 제거 -> 최소 10분(10초일 때) 
                     }
@@ -161,7 +157,9 @@ const Home = () => {
                 max: moment().valueOf(),
             },
             y: {
-                beginAtZero: true, // y축의 시작점을 0으로 설정
+                min: 0,
+                max: 100
+                
             },
         },
     };

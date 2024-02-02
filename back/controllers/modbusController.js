@@ -6,7 +6,7 @@ const { Op } = require('sequelize'); // Sequelize 연산자 임포트
 exports.readCurrentTemperature = async (req, res) => {
     try {
         const data = await modbusClient.readCurrentTemperature();
-        res.json(data.data[0]);
+        res.json(data);
     } catch (error) {
         res.status(500).send(error.message);
     }
@@ -17,7 +17,7 @@ exports.readCurrentTemperature = async (req, res) => {
 exports.readSetTemperature = async (req, res) => {
     try {
         const data = await modbusClient.readSetTemperature();
-        res.json(data.data[0]);
+        res.json(data);
     } catch (error) {
         res.status(500).send(error.message);
     }
@@ -36,7 +36,7 @@ exports.writeSetTemperature = async (req, res) => {
 exports.readThermostatStatus = async (req, res) => {
     try {
         const data = await modbusClient.readThermostatStatus();
-        res.json(data.data[0]);
+        res.json(data);
     } catch (error) {
         res.status(500).send(error.message);
     }
@@ -52,24 +52,6 @@ exports.writeThermostatControl = async (req, res) => {
     }
 };
 
-exports.readTemperatureHistory = async (req, res) => {
-    try {
-        const { startDate, endDate } = req.query;
-        const records = await TemperatureRecord.findAll({
-            where: {
-                timestamp: {
-                    [Op.between]: [new Date(startDate), new Date(endDate)]
-                }
-            },
-            order: [['timestamp', 'ASC']]
-        });
-        res.json(records);
-    } catch (error) {
-        console.error(error);
-        res.status(500).send("Internal Server Error");
-    }
-
-}
 
 exports.readTemperatureHistory = async (req, res) => {
     try {
@@ -88,13 +70,14 @@ exports.readTemperatureHistory = async (req, res) => {
         console.log(intervalInSeconds);
 
         // 필요한 경우 데이터 다운샘플링 (간격에 따라 데이터 필터링)
-        const filteredData = [];
-        let lastTimestamp = null;
+        const filteredData = []; // 다운샘플링된 데이터를 저장할 배열
+        let lastTimestamp = null; // 마지막으로 추가된 데이터 포인트의 타임스탬프
         records.forEach(record => {
-            const currentTimestamp = new Date(record.timestamp).getTime();
+            const currentTimestamp = new Date(record.timestamp).getTime(); // 현재 데이터 포인트의 타임스탬프
+            // 마지막으로 추가된 데이터 포인트가 아니거나 현재 데이터 포인트 - 마지막으로 추가된 데이터 포인트의 차가 사용자 지정 데이터 주기보다 크거나 같은 경우
             if (!lastTimestamp || currentTimestamp - lastTimestamp >= intervalInSeconds * 1000) {
-                filteredData.push(record);
-                lastTimestamp = currentTimestamp;
+                filteredData.push(record); // 다운샘플링 데이터 배열에 추가
+                lastTimestamp = currentTimestamp; // 마지막으로 추가된 데이터 포인트를 현재 데이터 포인트의 타임스탬프로 업데이트
             }
         });
 
