@@ -20,7 +20,9 @@ const History = () => {
     const [temperatureData, setTemperatureData] = useState([]);
     const [interval, setInterval] = useState('60'); // 데이터 포인트 간격 (초 단위, 기본값 1분)
     const [verify, setVerify] = useState(false); // 데이터 조회 여부 검사
-
+    const [maxTemperature, setMaxTemperature] = useState(null);
+    const [minTemperature, setMinTemperature] = useState(null);
+    const [averageTemperature, setAverageTemperature] = useState(null);
 
     // 데이터 간격 선택 핸들러
     const handleIntervalChange = (e) => {
@@ -46,6 +48,8 @@ const History = () => {
                 }
             });
 
+            calculateTemperatureStats(chartData);
+
             // 차트 데이터 설정
             chartData.forEach((data, index) => {
                 chartLabels.push(currentTime.clone().add(interval * index, 'seconds').toDate());
@@ -53,11 +57,34 @@ const History = () => {
             });
 
             setTemperatureData({ labels: chartLabels, data: chartData });
+            
 
             setVerify(true);
         } catch (error) {
             console.error('Error fetching temperature history:', error);
             setVerify(false);
+        }
+    };
+
+    const calculateTemperatureStats = (data) => {
+        const validData = data.filter((dataPoint) => dataPoint !== null && dataPoint.temperature !== null).map(dataPoint => dataPoint.temperature);
+        console.log(validData);
+        if (validData.length > 0) {
+            const max = Math.max(...validData);
+            const min = Math.min(...validData);
+            const average = validData.reduce((acc, curr) => acc + curr, 0) / validData.length;
+
+            console.log(max);
+            console.log(min);
+            console.log(average);
+
+            setMaxTemperature(max);
+            setMinTemperature(min);
+            setAverageTemperature(average.toFixed(2)); // 소수점 두 자리까지
+        } else {
+            setMaxTemperature(null);
+            setMinTemperature(null);
+            setAverageTemperature(null);
         }
     };
 
@@ -252,6 +279,21 @@ const History = () => {
                     <ChartArea id="graph-container">
                         <Line data={lineChartData} options={chartOptions}/>
                     </ChartArea>
+                    <Title>데이터 분석</Title>
+                    <DataContainer>
+                        <DataItem>
+                            <Label>최댓값</Label>
+                            <Value>{maxTemperature ? `${maxTemperature}°C` : 'N/A'}</Value>
+                        </DataItem>
+                        <DataItem>
+                            <Label>최솟값</Label>
+                            <Value>{minTemperature ? `${minTemperature}°C` : 'N/A'}</Value>
+                        </DataItem>
+                        <DataItem>
+                            <Label>평균값</Label>
+                            <Value>{averageTemperature ? `${averageTemperature}°C` : 'N/A'}</Value>
+                        </DataItem>
+                    </DataContainer>
                 </Contents>
             </Body>
         </div>
@@ -348,4 +390,31 @@ const CaptureGraphButton = styled.button`
 
 const ChartArea = styled.div`
     // Add styling for chart area if needed
+`;
+
+const DataContainer = styled.div`
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  margin-bottom: 20px;
+`;
+
+const DataItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 10px;
+`;
+
+const Label = styled.span`
+  font-size: 18px;
+  font-weight: bold;
+  color: #666;
+`;
+
+const Value = styled.span`
+  margin-top: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  color: #333;
 `;
