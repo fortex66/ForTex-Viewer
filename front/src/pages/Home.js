@@ -49,6 +49,11 @@ const Home = () => {
     const [refreshSettingTemp, setRefreshSettingTemp] = useState(false);
     const [currentTempData, setCurrentTempData] = useState([]);
     const [refreshInterval, setRefreshInterval] = useState(10000); // 기본값을 10초로 설정
+    const [graphSetMax, setGraphSetMax] = useState(100);
+    const [graphSetMin, setGraphSetMin] = useState(0);
+    const [tempGraphSetMax, setTempGraphSetMax] = useState(graphSetMax);
+    const [tempGraphSetMin, setTempGraphSetMin] = useState(graphSetMin);
+
 
 
     useEffect(() => {
@@ -83,11 +88,14 @@ const Home = () => {
     }, [tempStatus]);
 
 
-    // 설정 온도 변경
-    const handleSetTempChange = (e) => {
-        setSetTemp(e.target.value);
+    const handleGraphSetMaxSubmit = () => {
+        setGraphSetMax(parseFloat(tempGraphSetMax));
     };
-
+    
+    const handleGraphSetMinSubmit = () => {
+        setGraphSetMin(parseFloat(tempGraphSetMin));
+    };
+    
 
     // 설정 온도 변경
     const handleSetTempSubmit = () => {
@@ -157,8 +165,8 @@ const Home = () => {
                 max: moment().valueOf(),
             },
             y: {
-                min: 0,
-                max: 100
+                min: graphSetMin,
+                max: graphSetMax
                 
             },
         },
@@ -204,7 +212,7 @@ const Home = () => {
                         <InputContainer>
                             <Label>온도 설정</Label>
                             <InputContents>
-                                <Input type="number" value={setTemp} onChange={handleSetTempChange} />
+                                <Input type="number" value={setTemp} onChange={(e)=>setSetTemp(e.target.value)} />
                                 <Button onClick={handleSetTempSubmit}>설정</Button>
                             </InputContents>
                         </InputContainer>
@@ -218,6 +226,23 @@ const Home = () => {
                                 <option value="1800000">30분</option>
                                 <option value="3600000">1시간</option>
                             </Select>
+                        </InputContainer>
+                    </ControlContainer>
+                    <Name>그래프 설정</Name>
+                    <ControlContainer>
+                        <InputContainer>
+                            <Label>최댓값</Label>
+                            <InputContents>
+                                <Input type="number" value={tempGraphSetMax} onChange={(e)=>setTempGraphSetMax(e.target.value)} />
+                                <Button onClick={handleGraphSetMaxSubmit}>설정</Button>
+                            </InputContents>
+                        </InputContainer>
+                        <InputContainer>
+                            <Label>최솟값</Label>
+                            <InputContents>
+                                <Input type="number" value={tempGraphSetMin} onChange={(e)=>setTempGraphSetMin(e.target.value)} />
+                                <Button onClick={handleGraphSetMinSubmit}>설정</Button>
+                            </InputContents>
                         </InputContainer>
                     </ControlContainer>
                 </Contents>
