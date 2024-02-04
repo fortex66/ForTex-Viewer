@@ -12,6 +12,7 @@ const Sidebar = () => {
     const location = useLocation();
     const [selected, setSelected] = useState(null);
 
+
     const navigateTo = (path, item) => {
         navigate(path);
         setSelected(item);
@@ -26,9 +27,9 @@ const Sidebar = () => {
     }, [location]);
 
   return (
-    <Container>
-        <List selected={selected === 'Main'} onClick={() => navigateTo('/', 'Main')}><StyledIcon icon={faDesktop} />Main</List>
-        <List selected={selected === 'History'} onClick={() => navigateTo('/History', 'History')}><StyledIcon icon={faDatabase} />History</List>
+    <Container >
+        <List  selected={selected === 'Main'} onClick={() => navigateTo('/', 'Main')}><StyledIcon icon={faDesktop} />Main</List>
+        <List  selected={selected === 'History'} onClick={() => navigateTo('/History', 'History')}><StyledIcon icon={faDatabase} />History</List>
         <List><StyledIcon icon={faGear} />Setting</List>
     </Container>
   );
@@ -37,18 +38,18 @@ const Sidebar = () => {
 const Container = styled.div`
     display : flex;
     flex-direction: column;
-    background-color : #515151;
-    padding-top: 20px;
+    background-color: #38393E;
+    padding-top: 20px; 
 `
 const List = styled.div`
     width : 200px;
     font-size : 24px;
-    color : white;
-    padding : 50px 20px 50px 20px;
+    color : #FEFEFE;
+    padding : 40px 20px 40px 20px;
     text-align : center;
     cursor: pointer;
     ${props => props.selected && css`
-        background-color: grey;
+        background-color: #766C76;
     `}
 
 `

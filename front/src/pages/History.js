@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import styled from 'styled-components';
 import { readTemperatureHistory } from '../services/api';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
+import { ThemeContext } from '../style/theme';
 import moment from 'moment-timezone';
 import { Line } from 'react-chartjs-2';
 import { saveAs } from 'file-saver';
@@ -11,8 +12,9 @@ import 'chartjs-adapter-moment';
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
     faFileCsv,
-    faImage
+    faFileImage
 } from "@fortawesome/free-solid-svg-icons";
+
 
 const History = () => {
     const [startDateTime, setStartDateTime] = useState('');
@@ -24,6 +26,7 @@ const History = () => {
     const [minTemperature, setMinTemperature] = useState(null);
     const [averageTemperature, setAverageTemperature] = useState(null);
 
+    const { isDark } = useContext(ThemeContext);
     // 데이터 간격 선택 핸들러
     const handleIntervalChange = (e) => {
         setInterval(e.target.value);
@@ -42,13 +45,16 @@ const History = () => {
             // 가장 가까운 데이터 포인트 찾기
             response.data.forEach(dataPoint => {
                 const dataTime = moment(dataPoint.timestamp); // 데이터베이스에서 가져온 각 온도 데이터의 시간
-                const closestIndex = Math.round(dataTime.diff(currentTime, 'seconds') / interval);
+                const closestIndex = Math.round(dataTime.diff(currentTime, 'seconds') / interval); // 데이터베이스에서 가져온 시간과 시작 시간의 차이를 데이터 간격으로 나눈 값을 반올림
+                
+                // chartData의 해당 인덱스가 아직 비어 있는 경우 or 이미 할당된 데이터 포인트가 있지만, 현재 데이터 포인트가 해당 시간대에 더 가깝다면
                 if (!chartData[closestIndex] || Math.abs(chartData[closestIndex].time.diff(dataTime)) > Math.abs(dataTime.diff(currentTime.clone().add(interval * closestIndex, 'seconds')))) {
+                    // 현재 데이터 포인트로 교체
                     chartData[closestIndex] = { temperature: dataPoint.temperature, time: dataTime };
                 }
             });
 
-            calculateTemperatureStats(chartData);
+            calculateTemperatureStats(chartData); // 데이터 계산
 
             // 차트 데이터 설정
             chartData.forEach((data, index) => {
@@ -59,13 +65,14 @@ const History = () => {
             setTemperatureData({ labels: chartLabels, data: chartData });
             
 
-            setVerify(true);
+            setVerify(true); // 조회가 완료되면 캡쳐 및 파일 다운 가능
         } catch (error) {
             console.error('Error fetching temperature history:', error);
             setVerify(false);
         }
     };
 
+    // 조회된 데이터의 계산
     const calculateTemperatureStats = (data) => {
         const validData = data.filter((dataPoint) => dataPoint !== null && dataPoint.temperature !== null).map(dataPoint => dataPoint.temperature);
         console.log(validData);
@@ -73,10 +80,6 @@ const History = () => {
             const max = Math.max(...validData);
             const min = Math.min(...validData);
             const average = validData.reduce((acc, curr) => acc + curr, 0) / validData.length;
-
-            console.log(max);
-            console.log(min);
-            console.log(average);
 
             setMaxTemperature(max);
             setMinTemperature(min);
@@ -126,7 +129,8 @@ const History = () => {
             label: '온도',
             data: temperatureData.data,
             fill: false,
-            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: isDark ? '#FDB800' : 'rgb(75, 192, 192)',
+            borderColor: isDark ? 'rgb(253, 183, 0, 0.2)' : 'rgb(75, 192, 192,0.2)',
             tension: 0.1
         }]
     };
@@ -139,12 +143,33 @@ const History = () => {
                 title: {
                     display: true,
                     text: 'Time',
+                    color: isDark ? '#FEFEFE' : '#202124',
+                },
+                ticks: {
+                    color: isDark ? '#FEFEFE' : '#202124', // x축 레이블 색상
+                },
+                grid: {
+                    color: isDark ? 'rgba(254, 254, 254, 0.1)' : 'rgba(19, 18, 19, 0.1)', // x축 그리드 라인 색상
                 },
             },
             y: {
+                ticks: {
+                    color: isDark ? '#FEFEFE' : '#202124', // y축 레이블 색상
+                },
+                grid: {
+                    color: isDark ? 'rgba(254, 254, 254, 0.1)' : 'rgba(19, 18, 19, 0.1)', // y축 그리드 라인 색상
+                },
                 beginAtZero: true,
             },
         },
+        plugins: {
+            legend: { // 범례 설정
+                labels: {
+                    // 범례 레이블의 색상을 조건부로 설정
+                    color: isDark ? '#FEFEFE' : '#131213',
+                }
+            }
+        }
     };
     
 
@@ -238,8 +263,8 @@ const History = () => {
             <Header></Header>
             <Body>
                 <Sidebar></Sidebar>
-                <Contents>
-                    <Title>온도 로그</Title>
+                <Contents isDark={isDark}>
+                    <Title isDark={isDark}>온도 로그</Title>
                         <Top>
                         <SearchArea>
                             <DateInput
@@ -272,26 +297,26 @@ const History = () => {
 
                         </SearchArea>
                         <Save>
-                            <SaveDataButton onClick={handleSaveDataAsCSV}><FontAwesomeIcon icon={faFileCsv} size="2x" color={"#28a745"}/></SaveDataButton>
-                            <CaptureGraphButton onClick={handleCaptureGraph}><FontAwesomeIcon icon={faImage} size="2x" color={"#17a2b8"}/></CaptureGraphButton>
+                            <SaveDataButton isDark={isDark} onClick={handleSaveDataAsCSV}><FontAwesomeIcon icon={faFileCsv} size="2x" color={"#28a745"}/></SaveDataButton>
+                            <CaptureGraphButton isDark={isDark} onClick={handleCaptureGraph}><FontAwesomeIcon icon={faFileImage} size="2x" color={isDark ? '#FFCC44' : 'rgb(75, 192, 192)'}/></CaptureGraphButton>
                         </Save>
                     </Top>
                     <ChartArea id="graph-container">
                         <Line data={lineChartData} options={chartOptions}/>
                     </ChartArea>
-                    <Title>데이터 분석</Title>
+                    <Title isDark={isDark}>데이터 분석</Title>
                     <DataContainer>
                         <DataItem>
-                            <Label>최댓값</Label>
-                            <Value>{maxTemperature ? `${maxTemperature}°C` : 'N/A'}</Value>
+                            <Label isDark={isDark} >최댓값</Label>
+                            <Value isDark={isDark} >{maxTemperature ? `${maxTemperature}°C` : 'N/A'}</Value>
                         </DataItem>
                         <DataItem>
-                            <Label>최솟값</Label>
-                            <Value>{minTemperature ? `${minTemperature}°C` : 'N/A'}</Value>
+                            <Label isDark={isDark} >최솟값</Label>
+                            <Value isDark={isDark} >{minTemperature ? `${minTemperature}°C` : 'N/A'}</Value>
                         </DataItem>
                         <DataItem>
-                            <Label>평균값</Label>
-                            <Value>{averageTemperature ? `${averageTemperature}°C` : 'N/A'}</Value>
+                            <Label isDark={isDark} >평균값</Label>
+                            <Value isDark={isDark} >{averageTemperature ? `${averageTemperature}°C` : 'N/A'}</Value>
                         </DataItem>
                     </DataContainer>
                 </Contents>
@@ -304,9 +329,10 @@ export default History;
 
 // Styled Components
 const Title = styled.h1`
-    font-size: 24px;
+    font-size : 24px;
     font-weight: bold;
-    margin-bottom: 20px;
+    margin: 5px 0px 20px 10px;
+    color: ${({ isDark }) => isDark ? '#FEFEFE' : '#131213'}; /* 조건부 스타일 */
 `;
 
 const Top = styled.div`
@@ -323,6 +349,7 @@ const Body = styled.div`
 const Contents = styled.div`
     flex-grow: 1;
     padding: 20px;
+    background-color: ${({ isDark }) => isDark ? '#131213' : '#FEFEFE'}; /* 조건부 스타일 */
 `;
 
 const SearchArea = styled.div`
@@ -332,22 +359,32 @@ const SearchArea = styled.div`
 
 const DateInput = styled.input`
     margin-right: 10px;
+    border-radius: 5px;
+    height: 20px;
+    padding: 5px;
+    border: 1px solid #ccc;
 `;
 
 const TimeInput = styled.input`
-    margin-right: 10px;
+    margin-right: 15px;
+    border-radius: 5px;
+    height: 20px;
+    padding:5px;
+    border: 1px solid #ccc;
 `;
 
 const DurationSelect = styled.select`
-    margin-right: 10px;
-    padding: 5px 10px;
+    margin-right: 15px;
+    height: 30px;
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
 `;
 
 const SearchButton = styled.button`
-    padding: 5px 15px;
+    height: 30px;
+    padding: 5px;
+    margin-left: 10px;
     background-color: #007bff;
     color: white;
     border: none;
@@ -364,28 +401,20 @@ const Save = styled.div`
 `;
 
 const SaveDataButton = styled.button`
-    background-color: white;
-    color: white;
+    background-color: ${({ isDark }) => isDark ? '#131213' : '#FEFEFE'}; /* 조건부 스타일 */
     border: none;
     border-radius: 5px;
     cursor: pointer;
 
-    &:hover {
-        
-    }
 `;
 
 const CaptureGraphButton = styled.button`
     margin-left: 10px; // 버튼 사이의 간격
-    background-color: white;
-    color: white;
+    background-color: ${({ isDark }) => isDark ? '#131213' : '#FEFEFE'}; /* 조건부 스타일 */
     border: none;
     border-radius: 5px;
     cursor: pointer;
 
-    &:hover {
-        
-    }
 `;
 
 const ChartArea = styled.div`
@@ -407,14 +436,14 @@ const DataItem = styled.div`
 `;
 
 const Label = styled.span`
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
-  color: #666;
+  color: ${({ isDark }) => isDark ? '#E3E1E3' : '#666'}; /* 조건부 스타일 */
 `;
 
 const Value = styled.span`
   margin-top: 10px;
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: ${({ isDark }) => isDark ? '#E3E1E3' : '#333'}; /* 조건부 스타일 */
 `;

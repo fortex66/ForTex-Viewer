@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import styled from "styled-components";
 import moment from 'moment';
 import { Line } from 'react-chartjs-2';
@@ -24,8 +24,9 @@ import {
     TimeSeriesScale,
   } from 'chart.js';
 
-  import Header from '../components/Header'
+import Header from '../components/Header'
 import Sidebar from '../components/Sidebar';
+import { ThemeContext } from '../style/theme';
 
 
 ChartJS.register(
@@ -47,27 +48,30 @@ const Home = () => {
     const [thermostatStatus, setThermostatStatus] = useState(null);
     const [tempStatus, setTempStatus] = useState(false);
     const [refreshSettingTemp, setRefreshSettingTemp] = useState(false);
-    const [currentTempData, setCurrentTempData] = useState([]);
+    const [currentTempData, setCurrentTempData] = useState([]); // 현재 온도값 배열 최대 60개
     const [refreshInterval, setRefreshInterval] = useState(10000); // 기본값을 10초로 설정
     const [graphSetMax, setGraphSetMax] = useState(100);
     const [graphSetMin, setGraphSetMin] = useState(0);
     const [tempGraphSetMax, setTempGraphSetMax] = useState(graphSetMax);
     const [tempGraphSetMin, setTempGraphSetMin] = useState(graphSetMin);
 
+    const { isDark } = useContext(ThemeContext);
 
 
+    // 설정 온도 읽기
     useEffect(() => {
         readSettingTemperature().then(response => {
             setSettingTemp(response.data);
         }).catch(error => console.error('Error:', error));
-    }, [refreshSettingTemp]);
+    }, [refreshSettingTemp]); // 세팅 온도를 바꾸면 다시 읽어와서 표시
 
 
+    // 현재 온도 읽기
     useEffect(() => {
+        // interval을 설정하여 주기적으로 데이터를 서버로 부터 받아옴
         const interval = setInterval(() => {
             readCurrentTemperature().then(response => {
                 setCurrentTemp(response.data);
-
                 setCurrentTempData(prevData => {
                     const newData = [...prevData, { x: moment().valueOf(), y: response.data }]
                     if (newData.length > 60) {
@@ -80,22 +84,22 @@ const Home = () => {
         return () => clearInterval(interval);
     }, [refreshInterval]);
 
-
+    // 온도계 상태 읽어오기
     useEffect(() => {
         readThermostatStatus().then(response => {
             setThermostatStatus(response.data);
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
 
-
+    // 그래프 y축 최댓값 변경
     const handleGraphSetMaxSubmit = () => {
         setGraphSetMax(parseFloat(tempGraphSetMax));
     };
     
+    // 그래프 y축 최솟값 변경
     const handleGraphSetMinSubmit = () => {
         setGraphSetMin(parseFloat(tempGraphSetMin));
     };
-    
 
     // 설정 온도 변경
     const handleSetTempSubmit = () => {
@@ -139,8 +143,8 @@ const Home = () => {
             label: '현재 온도',
             data: currentTempData.map(data => ({ x: data.x, y: data.y })),
             fill: false,
-            backgroundColor: 'rgb(75, 192, 192)',
-            borderColor: 'rgba(75, 192, 192, 0.2)',
+            backgroundColor: isDark ? '#FDB800' : 'rgb(75, 192, 192)',
+            borderColor: isDark ? 'rgb(253, 183, 0, 0.2)' : 'rgb(75, 192, 192,0.2)',
         }],
     };
     
@@ -158,18 +162,39 @@ const Home = () => {
                 },
                 title: {
                     display: true,
-                    text: 'Time',
+                    text: '시간',
+                    color: isDark ? '#FEFEFE' : '#202124'
+                },
+                ticks: {
+                    color: isDark ? '#FEFEFE' : '#202124', // x축 레이블 색상
+                },
+                grid: {
+                    color: isDark ? 'rgba(254, 254, 254, 0.1)' : 'rgba(19, 18, 19, 0.1)', // x축 그리드 라인 색상
                 },
                 // x축 범위 조정을 위한 추가 설정
                 min: currentTempData.length > 0 ? currentTempData[0].x : moment().subtract(5, 'minutes').valueOf(),
                 max: moment().valueOf(),
             },
             y: {
+                ticks: {
+                    color: isDark ? '#FEFEFE' : '#202124', // y축 레이블 색상
+                },
+                grid: {
+                    color: isDark ? 'rgba(254, 254, 254, 0.1)' : 'rgba(19, 18, 19, 0.1)', // y축 그리드 라인 색상
+                },
                 min: graphSetMin,
                 max: graphSetMax
                 
             },
         },
+        plugins: {
+            legend: { // 범례 설정
+                labels: {
+                    // 범례 레이블의 색상을 조건부로 설정
+                    color: isDark ? '#FEFEFE' : '#131213',
+                }
+            }
+        }
     };
 
     return (
@@ -177,29 +202,29 @@ const Home = () => {
             <Header></Header>
             <Body>
                 <Sidebar></Sidebar>
-                <Contents>
-                    <Name>온도 모니터링</Name>
+                <Contents isDark={isDark}>
+                    <Name isDark={isDark}>온도 모니터링</Name>
                     <StatusContainer>
                         <StatusItem>
-                            <Label>설정 온도</Label>
-                            <Value>{settingTemp}°C</Value>
+                            <Label isDark={isDark}>설정 온도</Label>
+                            <Value isDark={isDark}>{settingTemp}°C</Value>
                         </StatusItem>
                         <StatusItem>
-                            <Label>현재 온도</Label>
-                            <Value>{currentTemp}°C</Value>
+                            <Label isDark={isDark}>현재 온도</Label>
+                            <Value isDark={isDark}>{currentTemp}°C</Value>
                         </StatusItem>
                         <StatusItem>
-                            <Label>온도계 상태</Label>
+                            <Label isDark={isDark}>온도계 상태</Label>
                             <StatusValue status={thermostatStatus}>{getThermostatStatusText(thermostatStatus)}</StatusValue>
                         </StatusItem>
                     </StatusContainer>
                     <div>
                         <Line data={chartData} options={chartOptions} />
                     </div>
-                    <Name>온도 제어</Name>
+                    <Name isDark={isDark}>온도 제어</Name>
                     <ControlContainer>
                         <InputContainer>
-                            <Label>온도계 스위치</Label>
+                            <Label isDark={isDark}>온도계 스위치</Label>
                             <ToggleSwitch>
                             <Checkbox
                                 type="checkbox"
@@ -210,14 +235,14 @@ const Home = () => {
                             </ToggleSwitch>
                         </InputContainer>
                         <InputContainer>
-                            <Label>온도 설정</Label>
+                            <Label isDark={isDark} >온도 설정</Label>
                             <InputContents>
                                 <Input type="number" value={setTemp} onChange={(e)=>setSetTemp(e.target.value)} />
                                 <Button onClick={handleSetTempSubmit}>설정</Button>
                             </InputContents>
                         </InputContainer>
                         <InputContainer>
-                        <Label>데이터 주기</Label>
+                        <Label isDark={isDark}>데이터 주기</Label>
                             <Select value={refreshInterval} onChange={handleIntervalChange}>
                                 <option value="10000">10초</option>
                                 <option value="30000">30초</option>
@@ -228,17 +253,17 @@ const Home = () => {
                             </Select>
                         </InputContainer>
                     </ControlContainer>
-                    <Name>그래프 설정</Name>
+                    <Name isDark={isDark}>그래프 설정</Name>
                     <ControlContainer>
                         <InputContainer>
-                            <Label>최댓값</Label>
+                            <Label isDark={isDark}>최댓값</Label>
                             <InputContents>
                                 <Input type="number" value={tempGraphSetMax} onChange={(e)=>setTempGraphSetMax(e.target.value)} />
                                 <Button onClick={handleGraphSetMaxSubmit}>설정</Button>
                             </InputContents>
                         </InputContainer>
                         <InputContainer>
-                            <Label>최솟값</Label>
+                            <Label isDark={isDark}>최솟값</Label>
                             <InputContents>
                                 <Input type="number" value={tempGraphSetMin} onChange={(e)=>setTempGraphSetMin(e.target.value)} />
                                 <Button onClick={handleGraphSetMinSubmit}>설정</Button>
@@ -261,14 +286,15 @@ const Body = styled.div`
 const Contents = styled.div`
     flex-grow: 1; // 사용 가능한 공간을 모두 차지하도록 설정
     padding: 20px; // 콘텐츠 내부 여백 설정
-    // 필요에 따라 추가적인 스타일 속성을 적용
+    background-color: ${({ isDark }) => isDark ? '#131213' : '#FEFEFE'}; /* 조건부 스타일 */
 `;
 
 
 const Name = styled.div`
     font-size : 24px;
     font-weight: bold;
-    margin: 5px 0px 5px 10px;
+    margin: 5px 0px 5px 10px;  
+    color: ${({ isDark }) => isDark ? '#FEFEFE' : '#131213'}; /* 조건부 스타일 */
 `
 
 const StatusContainer = styled.div`
@@ -286,16 +312,17 @@ const StatusItem = styled.div`
 `;
 
 const Label = styled.span`
-  font-size: 18px;
+  font-size: 20px;
   font-weight: bold;
-  color: #666;
+  color: ${({ isDark }) => isDark ? '#E3E1E3' : '#666'}; /* 조건부 스타일 */
+
 `;
 
 const Value = styled.span`
   margin-top: 10px;
   font-size: 18px;
   font-weight: bold;
-  color: #333;
+  color: ${({ isDark }) => isDark ? '#E3E1E3' : '#333'}; /* 조건부 스타일 */
 `;
 
 const StatusValue = styled.span`
