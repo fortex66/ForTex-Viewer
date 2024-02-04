@@ -233,7 +233,6 @@ const History = () => {
     // CSV 파일로 저장하는 함수
     const saveDataAsCSV = (data) => {
         const BOM = '\uFEFF'; // 한글 입력시 깨짐 방지
-
         const csvContent = convertToCSV(data);
         const blob = new Blob([BOM + csvContent], { type: "text/csv;charset=utf-8;" });
         saveAs(blob, "temperature-data.csv");
@@ -301,7 +300,7 @@ const History = () => {
                             <CaptureGraphButton isDark={isDark} onClick={handleCaptureGraph}><FontAwesomeIcon icon={faFileImage} size="2x" color={isDark ? '#FFCC44' : 'rgb(75, 192, 192)'}/></CaptureGraphButton>
                         </Save>
                     </Top>
-                    <ChartArea id="graph-container">
+                    <ChartArea id="graph-container" style={{ backgroundColor: isDark ? '#131213' : '#FEFEFE' }}>
                         <Line data={lineChartData} options={chartOptions}/>
                     </ChartArea>
                     <Title isDark={isDark}>데이터 분석</Title>
