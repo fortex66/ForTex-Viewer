@@ -27,6 +27,7 @@ import {
 import Header from '../components/Header'
 import Sidebar from '../components/Sidebar';
 import { ThemeContext } from '../style/theme';
+import { useSettings } from '../contexts/SettingContext';
 
 
 ChartJS.register(
@@ -49,14 +50,13 @@ const Home = () => {
     const [tempStatus, setTempStatus] = useState(false);
     const [refreshSettingTemp, setRefreshSettingTemp] = useState(false);
     const [currentTempData, setCurrentTempData] = useState([]); // 현재 온도값 배열 최대 60개
-    const [refreshInterval, setRefreshInterval] = useState(10000); // 기본값을 10초로 설정
-    const [graphSetMax, setGraphSetMax] = useState(100);
-    const [graphSetMin, setGraphSetMin] = useState(0);
-    const [tempGraphSetMax, setTempGraphSetMax] = useState(graphSetMax);
-    const [tempGraphSetMin, setTempGraphSetMin] = useState(graphSetMin);
 
     const { isDark } = useContext(ThemeContext);
+    const { refreshInterval, graphSetMax, graphSetMin, color, darkcolor } = useSettings();
 
+    // 상한값과 하한값 정의
+    const MAX_TEMP = 60;
+    const MIN_TEMP = 10;
 
     // 설정 온도 읽기
     useEffect(() => {
@@ -91,26 +91,23 @@ const Home = () => {
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
 
-    // 그래프 y축 최댓값 변경
-    const handleGraphSetMaxSubmit = () => {
-        setGraphSetMax(parseFloat(tempGraphSetMax));
-    };
-    
-    // 그래프 y축 최솟값 변경
-    const handleGraphSetMinSubmit = () => {
-        setGraphSetMin(parseFloat(tempGraphSetMin));
-    };
-
-    // 설정 온도 변경
     const handleSetTempSubmit = () => {
-        const value = parseFloat(setTemp) * 10; // string -> number
-        writeSetTemperature(value).then(response => {
+        const value = parseFloat(setTemp); // 입력값을 숫자로 변환
+        // 입력값이 상한값과 하한값 사이에 있는지 검증
+        if (value < MIN_TEMP || value > MAX_TEMP) {
+            // 사용자에게 경고 메시지를 보여주고 함수 실행을 중단
+            alert(`온도 설정은 ${MIN_TEMP}°C와 ${MAX_TEMP}°C 사이여야 합니다.`);
+            return; // 함수 실행 중단
+        }
+
+        // API 호출을 위한 온도 값 조정 (예시에서는 °C 값을 10배하여 전송)
+        writeSetTemperature(value * 10).then(response => {
             console.log('Set temperature:', response.data);
             setRefreshSettingTemp(prev => !prev);
-            setSetTemp('');
+            setSetTemp(''); // 입력 필드 초기화
         }).catch(error => {
             console.error('Error:', error);
-            setSetTemp('오류발생');
+            setSetTemp('오류발생'); // 오류 메시지 설정
         });
     };
 
@@ -131,10 +128,6 @@ const Home = () => {
         }
     };
 
-    // 드롭다운 메뉴 구현
-    const handleIntervalChange = (e) => {
-        setRefreshInterval(Number(e.target.value));
-    };
 
     // 차트 데이터 설정
     const chartData = {
@@ -143,8 +136,10 @@ const Home = () => {
             label: '현재 온도',
             data: currentTempData.map(data => ({ x: data.x, y: data.y })),
             fill: false,
-            backgroundColor: isDark ? '#FDB800' : 'rgb(75, 192, 192)',
-            borderColor: isDark ? 'rgb(253, 183, 0, 0.2)' : 'rgb(75, 192, 192,0.2)',
+            backgroundColor: isDark ? darkcolor : color,
+            borderColor: isDark ? darkcolor : color,
+            pointRadius: 4, // 데이터 포인트의 반지름을 5픽셀로 설정
+            pointHoverRadius: 7, // 마우스 오버 시 데이터 포인트의 반지름을 7픽셀로 설정
         }],
     };
     
@@ -241,34 +236,6 @@ const Home = () => {
                                 <Button onClick={handleSetTempSubmit}>설정</Button>
                             </InputContents>
                         </InputContainer>
-                        <InputContainer>
-                        <Label isDark={isDark}>데이터 주기</Label>
-                            <Select value={refreshInterval} onChange={handleIntervalChange}>
-                                <option value="10000">10초</option>
-                                <option value="30000">30초</option>
-                                <option value="60000">1분</option>
-                                <option value="600000">10분</option>
-                                <option value="1800000">30분</option>
-                                <option value="3600000">1시간</option>
-                            </Select>
-                        </InputContainer>
-                    </ControlContainer>
-                    <Name isDark={isDark}>그래프 설정</Name>
-                    <ControlContainer>
-                        <InputContainer>
-                            <Label isDark={isDark}>최댓값</Label>
-                            <InputContents>
-                                <Input type="number" value={tempGraphSetMax} onChange={(e)=>setTempGraphSetMax(e.target.value)} />
-                                <Button onClick={handleGraphSetMaxSubmit}>설정</Button>
-                            </InputContents>
-                        </InputContainer>
-                        <InputContainer>
-                            <Label isDark={isDark}>최솟값</Label>
-                            <InputContents>
-                                <Input type="number" value={tempGraphSetMin} onChange={(e)=>setTempGraphSetMin(e.target.value)} />
-                                <Button onClick={handleGraphSetMinSubmit}>설정</Button>
-                            </InputContents>
-                        </InputContainer>
                     </ControlContainer>
                 </Contents>
             </Body>
@@ -331,15 +298,7 @@ const StatusValue = styled.span`
   font-weight: bold;
   color: ${({ status }) => status === 512 ? 'green' : 'red'}; // 온도계 상태에 따라 색상 변경
 `
-const Select = styled.select`
-  font-size: 16px;
-  padding: 5px 10px;
-  margin-top: 20px;
-  margin-left: 10px;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  cursor: pointer;
-`;
+
 
 // 온도 제어 섹션 스타일링
 const ControlContainer = styled.div`
