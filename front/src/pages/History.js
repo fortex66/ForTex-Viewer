@@ -4,6 +4,7 @@ import { readTemperatureHistory } from '../services/api';
 import Header from '../components/Header';
 import Sidebar from '../components/Sidebar';
 import { ThemeContext } from '../style/theme';
+import { useSettings } from '../contexts/SettingContext';
 import moment from 'moment-timezone';
 import { Line } from 'react-chartjs-2';
 import { saveAs } from 'file-saver';
@@ -27,6 +28,8 @@ const History = () => {
     const [averageTemperature, setAverageTemperature] = useState(null);
 
     const { isDark } = useContext(ThemeContext);
+    const { color, darkcolor } = useSettings();
+
     // 데이터 간격 선택 핸들러
     const handleIntervalChange = (e) => {
         setInterval(e.target.value);
@@ -129,9 +132,11 @@ const History = () => {
             label: '온도',
             data: temperatureData.data,
             fill: false,
-            backgroundColor: isDark ? '#FDB800' : 'rgb(75, 192, 192)',
-            borderColor: isDark ? 'rgb(253, 183, 0, 0.2)' : 'rgb(75, 192, 192,0.2)',
-            tension: 0.1
+            backgroundColor: isDark ? darkcolor : color,
+            borderColor: isDark ? darkcolor : color,
+            tension: 0.1,
+            pointRadius: 3, // 데이터 포인트의 반지름을 5픽셀로 설정
+            pointHoverRadius: 7, // 마우스 오버 시 데이터 포인트의 반지름을 7픽셀로 설정
         }]
     };
 
@@ -287,6 +292,7 @@ const History = () => {
                                 onChange={(e) => handleTimeChange(e.target.value, 'end')}
                             />
                             <DurationSelect value={interval} onChange={handleIntervalChange}>
+                                <option value="10">10초</option>
                                 <option value="60">1분</option>
                                 <option value="600">10분</option>
                                 <option value="1800">30분</option>

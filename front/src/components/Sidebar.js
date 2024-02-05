@@ -30,7 +30,7 @@ const Sidebar = () => {
     <Container >
         <List  selected={selected === 'Main'} onClick={() => navigateTo('/', 'Main')}><StyledIcon icon={faDesktop} />Main</List>
         <List  selected={selected === 'History'} onClick={() => navigateTo('/History', 'History')}><StyledIcon icon={faDatabase} />History</List>
-        <List><StyledIcon icon={faGear} />Setting</List>
+        <List selected={selected === 'Setting'} onClick={() => navigateTo('/Setting', 'Setting')}><StyledIcon icon={faGear} />Setting</List>
     </Container>
   );
 };
