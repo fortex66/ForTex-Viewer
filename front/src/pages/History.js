@@ -334,7 +334,7 @@ export default History;
 
 // Styled Components
 const Title = styled.h1`
-    font-size : 24px;
+    font-size : 22px;
     font-weight: bold;
     margin: 5px 0px 20px 10px;
     color: ${({ isDark }) => isDark ? '#FEFEFE' : '#131213'}; /* 조건부 스타일 */
@@ -343,7 +343,7 @@ const Title = styled.h1`
 const Top = styled.div`
     display: flex;
     justify-content: space-between;
-    margin: 5px 100px 20px 20px;
+    margin: 5px 100px 15px 20px;
 `;
 
 const Body = styled.div`
@@ -365,7 +365,7 @@ const SearchArea = styled.div`
 const DateInput = styled.input`
     margin-right: 10px;
     border-radius: 5px;
-    height: 20px;
+    height: 12px;
     padding: 5px;
     border: 1px solid #ccc;
 `;
@@ -373,21 +373,20 @@ const DateInput = styled.input`
 const TimeInput = styled.input`
     margin-right: 15px;
     border-radius: 5px;
-    height: 20px;
+    height: 12px;
     padding:5px;
     border: 1px solid #ccc;
 `;
 
 const DurationSelect = styled.select`
     margin-right: 15px;
-    height: 30px;
+    height: 24px;
     border: 1px solid #ccc;
     border-radius: 5px;
     cursor: pointer;
 `;
 
 const SearchButton = styled.button`
-    height: 30px;
     padding: 5px;
     margin-left: 10px;
     background-color: #007bff;
@@ -441,14 +440,13 @@ const DataItem = styled.div`
 `;
 
 const Label = styled.span`
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: ${({ isDark }) => isDark ? '#E3E1E3' : '#666'}; /* 조건부 스타일 */
 `;
 
 const Value = styled.span`
   margin-top: 10px;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
   color: ${({ isDark }) => isDark ? '#E3E1E3' : '#333'}; /* 조건부 스타일 */
 `;

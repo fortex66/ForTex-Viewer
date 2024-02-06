@@ -258,7 +258,7 @@ const Contents = styled.div`
 
 
 const Name = styled.div`
-    font-size : 24px;
+    font-size : 22px;
     font-weight: bold;
     margin: 5px 0px 5px 10px;  
     color: ${({ isDark }) => isDark ? '#FEFEFE' : '#131213'}; /* 조건부 스타일 */
@@ -279,7 +279,7 @@ const StatusItem = styled.div`
 `;
 
 const Label = styled.span`
-  font-size: 20px;
+  font-size: 18px;
   font-weight: bold;
   color: ${({ isDark }) => isDark ? '#E3E1E3' : '#666'}; /* 조건부 스타일 */
 
@@ -287,14 +287,13 @@ const Label = styled.span`
 
 const Value = styled.span`
   margin-top: 10px;
-  font-size: 18px;
-  font-weight: bold;
+  font-size: 16px;
   color: ${({ isDark }) => isDark ? '#E3E1E3' : '#333'}; /* 조건부 스타일 */
 `;
 
 const StatusValue = styled.span`
   margin-top: 10px;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: bold;
   color: ${({ status }) => status === 512 ? 'green' : 'red'}; // 온도계 상태에 따라 색상 변경
 `
@@ -320,14 +319,14 @@ const InputContents = styled.div`
 `
 
 const Input = styled.input`
-  font-size: 16px;
+  font-size: 14px;
   padding: 5px;
   margin-right: 15px; // 레이블과 입력창 사이 간격 조절
   width: 100px; // 입력 필드 너비 조절
 `;
 
 const Button = styled.button`
-  font-size: 16px;
+  font-size: 14px;
   padding: 5px 10px;
   color: white;
   background-color: #007bff;
