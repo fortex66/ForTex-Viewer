@@ -42,10 +42,10 @@ const Container = styled.div`
     padding-top: 20px; 
 `
 const List = styled.div`
-    width : 200px;
-    font-size : 24px;
+    width : 150px;
+    font-size : 20px;
     color : #FEFEFE;
-    padding : 40px 20px 40px 20px;
+    padding : 32px 20px 32px 20px;
     text-align : center;
     cursor: pointer;
     ${props => props.selected && css`

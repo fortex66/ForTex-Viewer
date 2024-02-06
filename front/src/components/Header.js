@@ -12,10 +12,8 @@ import {
 const Header = () => {
   const { isDark, setIsDark } = useContext(ThemeContext);
 
-  console.log(isDark);
   const handleMode = () => {
     setIsDark(!isDark);
-    console.log(isDark);
   }
 
   return (
@@ -23,9 +21,9 @@ const Header = () => {
         <Title>ForTex-Viewer</Title>
         <Mode>
           {isDark ? (
-            <FontAwesomeIcon icon={faSun} onClick={handleMode} color="#FEFEFE" size="2x"/>
+            <FontAwesomeIcon icon={faSun} onClick={handleMode} color="#FEFEFE" size="1.5em"/>
           ) : (
-            <FontAwesomeIcon icon={faMoon} onClick={handleMode} color="#FEFEFE" size="2x"/>
+            <FontAwesomeIcon icon={faMoon} onClick={handleMode} color="#FEFEFE" size="1.5em"/>
           )}
           
           
@@ -41,7 +39,7 @@ const Container = styled.div`
   background-color: #202124;
 `
 const Title = styled.div`
-  font-size : 30px;
+  font-size : 24px;
   color: #FEFEFE;
   font-weight : bold;
   padding : 10px 0px 10px 20px;
