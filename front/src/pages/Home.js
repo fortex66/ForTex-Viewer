@@ -48,8 +48,8 @@ const Home = () => {
     const [setTemp, setSetTemp] = useState('');
     const [thermostatStatus, setThermostatStatus] = useState(null);
     const [tempStatus, setTempStatus] = useState(false);
-    const [refreshSettingTemp, setRefreshSettingTemp] = useState(false);
     const [currentTempData, setCurrentTempData] = useState([]); // 현재 온도값 배열 최대 60개
+    const [settingTempData, setSettingTempData] = useState([]); // 설정 온도값 배열
 
     const { isDark } = useContext(ThemeContext);
     const { refreshInterval, graphSetMax, graphSetMin, color, darkcolor } = useSettings();
@@ -58,31 +58,46 @@ const Home = () => {
     const MAX_TEMP = 60;
     const MIN_TEMP = 10;
 
-    // 설정 온도 읽기
+    // 현재 온도 및 설정 온도 읽기
     useEffect(() => {
-        readSettingTemperature().then(response => {
-            setSettingTemp(response.data);
-        }).catch(error => console.error('Error:', error));
-    }, [refreshSettingTemp]); // 세팅 온도를 바꾸면 다시 읽어와서 표시
-
-
-    // 현재 온도 읽기
-    useEffect(() => {
-        // interval을 설정하여 주기적으로 데이터를 서버로 부터 받아옴
-        const interval = setInterval(() => {
-            readCurrentTemperature().then(response => {
-                setCurrentTemp(response.data);
+        // 데이터를 즉시 읽어오고 주기적으로 업데이트하는 함수
+        const fetchData = async () => {
+            try {
+                // 현재 온도 읽기
+                const currentTempResponse = await readCurrentTemperature();
+                setCurrentTemp(currentTempResponse.data);
                 setCurrentTempData(prevData => {
-                    const newData = [...prevData, { x: moment().valueOf(), y: response.data }]
-                    if (newData.length > 60) {
-                        newData.shift(); // 배열의 첫 번째 요소 제거 -> 최소 10분(10초일 때) 
-                    }
-                    return newData;
+                    const newData = [...prevData, { x: moment().valueOf(), y: currentTempResponse.data }];
+                    // 배열의 길이가 60을 초과하면 가장 오래된 데이터 제거
+                    return newData.length > 60 ? newData.slice(1) : newData;
                 });
-            }).catch(error => console.error('Error:', error));
+    
+                // 설정 온도 읽기
+                const settingTempResponse = await readSettingTemperature();
+                setSettingTemp(settingTempResponse.data);
+                setSettingTempData(prevData => {
+                    const newData = [...prevData, { x: moment().valueOf(), y: settingTempResponse.data }];
+                    // 배열의 길이가 60을 초과하면 가장 오래된 데이터 제거
+                    return newData.length > 60 ? newData.slice(1) : newData;
+                });
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        };
+    
+        // 컴포넌트 마운트 시 데이터 즉시 읽기
+        fetchData();
+    
+        // 설정된 주기에 따라 데이터 주기적으로 업데이트
+        const interval = setInterval(() => {
+            fetchData();
         }, refreshInterval);
+    
+        // 컴포넌트 언마운트 시 인터벌 정리
         return () => clearInterval(interval);
     }, [refreshInterval]);
+    
+    
 
     // 온도계 상태 읽어오기
     useEffect(() => {
@@ -90,6 +105,7 @@ const Home = () => {
             setThermostatStatus(response.data);
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
+
 
     const handleSetTempSubmit = () => {
         const value = parseFloat(setTemp); // 입력값을 숫자로 변환
@@ -99,18 +115,28 @@ const Home = () => {
             alert(`온도 설정은 ${MIN_TEMP}°C와 ${MAX_TEMP}°C 사이여야 합니다.`);
             return; // 함수 실행 중단
         }
-
+    
         // API 호출을 위한 온도 값 조정 (예시에서는 °C 값을 10배하여 전송)
         writeSetTemperature(value * 10).then(response => {
             console.log('Set temperature:', response.data);
-            setRefreshSettingTemp(prev => !prev);
+            // 설정 온도 상태 업데이트
+            setSettingTemp(value); // 화면에 바로 반영될 설정 온도를 업데이트
+            // 그래프 데이터에 설정 온도를 추가
+            setSettingTempData(prevData => {
+                const newData = [...prevData, { x: moment().valueOf(), y: value }];
+                if (newData.length > 60) {
+                    newData.shift(); // 배열의 첫 번째 요소 제거
+                }
+                return newData;
+            });
+            
             setSetTemp(''); // 입력 필드 초기화
         }).catch(error => {
             console.error('Error:', error);
             setSetTemp('오류발생'); // 오류 메시지 설정
         });
     };
-
+    
     // 온도계 Start / Run 변경
     const handleThermostatControl = (control) => {
         writeThermostatControl(control).then(response => {
@@ -140,7 +166,17 @@ const Home = () => {
             borderColor: isDark ? darkcolor : color,
             pointRadius: 4, // 데이터 포인트의 반지름을 5픽셀로 설정
             pointHoverRadius: 7, // 마우스 오버 시 데이터 포인트의 반지름을 7픽셀로 설정
-        }],
+        },
+        {
+            label: '설정 온도',
+            data: settingTempData.map(data => ({ x: data.x, y: data.y })),
+            fill: false,
+            borderColor: '#FF6384', // 설정 온도의 선 색상을 다르게 설정
+            backgroundColor: '#FF6384',
+            pointRadius: 4,
+            pointHoverRadius: 7,
+        }
+    ],
     };
     
     // 차트 옵션
