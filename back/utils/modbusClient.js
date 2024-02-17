@@ -129,7 +129,7 @@ async function writeSetTemperature(value) {
     });
 }
 
-// D1105 레지스터 읽기 (온도계 상태)
+// D1105 레지스터 읽기 (온도계 상태) on -> 512 / off -> 768
 async function readThermostatStatus() {
     return await modbusOperation(async () => {
         const { data } = await client.readInputRegisters(1105, 1);
@@ -144,14 +144,28 @@ async function writeThermostatControl(value) {
     });
 }
 
+
 async function saveTemperaturePeriodically() {
     try {
-        const temperature = await modbusOperation(readCurrentTemperature);
-        const timestamp = new Date();
-        await temperaturerecords.create({ temperature, timestamp });
-        console.log(`Temperature saved: ${temperature}°C at ${timestamp}`);
+        const thermostatStatus = await modbusOperation(readThermostatStatus);
+        // 온도계 상태가 ON일 때만 데이터를 저장
+        if (thermostatStatus === 512) {
+            const currentTemperature = await modbusOperation(readCurrentTemperature);
+            const settingTemperature = await modbusOperation(readSetTemperature);
+            const timestamp = new Date();
+            
+            // 현재 온도와 설정 온도, 타임스탬프를 데이터베이스에 저장
+            await temperaturerecords.create({
+                temperature: currentTemperature,
+                settingtemp: settingTemperature,
+                timestamp
+            });
+            console.log(`Data saved: Current Temperature = ${currentTemperature}°C, Setting Temperature = ${settingTemperature}°C at ${timestamp}`);
+        } else {
+            console.log("Thermostat is OFF. Skipping data save.");
+        }
     } catch (error) {
-        console.error("Failed to save temperature:", error);
+        console.error("Failed to save temperature data:", error);
     }
 }
 
