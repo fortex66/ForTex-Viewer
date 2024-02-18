@@ -87,3 +87,18 @@ exports.readTemperatureHistory = async (req, res) => {
         res.status(500).send("Internal Server Error");
     }
 };
+
+// 최신 30개의 온도 기록을 조회하는 컨트롤러 함수
+exports.getLatestTemperatureRecords = async (req, res) => {
+    try {
+        const latestRecords = await TemperatureRecord.findAll({
+            limit: 30, // 최신 30개의 데이터만 조회
+            order: [['timestamp', 'DESC']], // 최신 기록부터 정렬
+        });
+        res.json(latestRecords); // 조회된 데이터를 JSON 형태로 응답
+        console.log(latestRecords);
+    } catch (error) {
+        console.error("Error fetching latest temperature records:", error);
+        res.status(500).send("Error fetching latest temperature records");
+    }
+};
