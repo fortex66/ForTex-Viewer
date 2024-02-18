@@ -31,3 +31,8 @@ export const readTemperatureHistory = async (startDate, endDate, interval ) => {
         params: { startDate, endDate, interval  }
     });
 };
+
+// 최신 온도 기록을 읽어오는 API 호출
+export const getLatestTemperatureRecords = async () => {
+    return axios.get('/api/modbus/latest-temperature-records');
+};

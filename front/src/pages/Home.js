@@ -9,6 +9,7 @@ import {
     writeSetTemperature,
     readThermostatStatus,
     writeThermostatControl,
+    getLatestTemperatureRecords
 } from '../services/api';
 
 import {
@@ -58,45 +59,72 @@ const Home = () => {
     const MAX_TEMP = 60;
     const MIN_TEMP = 10;
 
-    // 현재 온도 및 설정 온도 읽기
+    // 초기 데이터 로드 및 주기적 업데이트 로직 통합
     useEffect(() => {
-        // 데이터를 즉시 읽어오고 주기적으로 업데이트하는 함수
-        const fetchData = async () => {
+        // 최신 데이터 로드 함수
+        const fetchInitialData = async () => {
+            try {
+                const response = await getLatestTemperatureRecords();
+                console.log("API Response:", response);
+                
+
+                const latestRecords = response.data;
+                
+                // 현재 온도 및 설정 온도 데이터 업데이트
+                const newCurrentTempData = latestRecords.map(record => {
+                    console.log(record.timestamp); // 여기에 콘솔 로그 추가
+                    return {
+                        x: moment(record.timestamp).valueOf(),
+                        // x: moment(record.timestamp).local().format('HH:mm:ss')
+                        y: record.temperature,
+                    };
+                });
+
+                console.log("New Current Temperature Data:", newCurrentTempData);
+
+                const newSettingTempData = latestRecords.map(record => ({
+                    x: moment(record.timestamp).valueOf(),
+                    y: record.settingtemp,
+                }));
+                console.log("New Setting Temperature Data:", newSettingTempData);
+
+                setCurrentTempData(newCurrentTempData);
+                setSettingTempData(newSettingTempData);
+            } catch (error) {
+                console.error('Error fetching initial temperature records:', error);
+            }
+        };
+
+        // 실시간 데이터 업데이트 함수
+        const updateData = async () => {
             try {
                 // 현재 온도 읽기
                 const currentTempResponse = await readCurrentTemperature();
+                console.log("Current Temperature Response:", currentTempResponse.data);
                 setCurrentTemp(currentTempResponse.data);
-                setCurrentTempData(prevData => {
-                    const newData = [...prevData, { x: moment().valueOf(), y: currentTempResponse.data }];
-                    // 배열의 길이가 60을 초과하면 가장 오래된 데이터 제거
-                    return newData.length > 60 ? newData.slice(1) : newData;
-                });
-    
+                setCurrentTempData(prevData => [...prevData, { x: moment().valueOf(), y: currentTempResponse.data }].slice(-60));
+
                 // 설정 온도 읽기
                 const settingTempResponse = await readSettingTemperature();
+                console.log("Setting Temperature Response:", settingTempResponse.data);
                 setSettingTemp(settingTempResponse.data);
-                setSettingTempData(prevData => {
-                    const newData = [...prevData, { x: moment().valueOf(), y: settingTempResponse.data }];
-                    // 배열의 길이가 60을 초과하면 가장 오래된 데이터 제거
-                    return newData.length > 60 ? newData.slice(1) : newData;
-                });
+                setSettingTempData(prevData => [...prevData, { x: moment().valueOf(), y: settingTempResponse.data }].slice(-60));
             } catch (error) {
-                console.error('Error:', error);
+                console.error('Error updating temperature data:', error);
             }
         };
-    
-        // 컴포넌트 마운트 시 데이터 즉시 읽기
-        fetchData();
-    
-        // 설정된 주기에 따라 데이터 주기적으로 업데이트
-        const interval = setInterval(() => {
-            fetchData();
+
+        // 초기 데이터 로드
+        fetchInitialData();
+
+        // 주기적 업데이트 설정
+        const intervalId = setInterval(() => {
+            updateData(); // 이후 데이터 업데이트
         }, refreshInterval);
-    
-        // 컴포넌트 언마운트 시 인터벌 정리
-        return () => clearInterval(interval);
-    }, [refreshInterval]);
-    
+
+        // 클린업 함수
+        return () => clearInterval(intervalId);
+    }, [refreshInterval]); // 의존성 배열에 refreshInterval 추가
     
 
     // 온도계 상태 읽어오기

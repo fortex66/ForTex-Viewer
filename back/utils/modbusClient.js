@@ -147,28 +147,27 @@ async function writeThermostatControl(value) {
 
 async function saveTemperaturePeriodically() {
     try {
-        const thermostatStatus = await modbusOperation(readThermostatStatus);
-        // 온도계 상태가 ON일 때만 데이터를 저장
-        if (thermostatStatus === 512) {
-            const currentTemperature = await modbusOperation(readCurrentTemperature);
-            const settingTemperature = await modbusOperation(readSetTemperature);
-            const timestamp = new Date();
-            
-            // 현재 온도와 설정 온도, 타임스탬프를 데이터베이스에 저장
-            await temperaturerecords.create({
-                temperature: currentTemperature,
-                settingtemp: settingTemperature,
-                timestamp
-            });
-            console.log(`Data saved: Current Temperature = ${currentTemperature}°C, Setting Temperature = ${settingTemperature}°C at ${timestamp}`);
-        } else {
-            console.log("Thermostat is OFF. Skipping data save.");
-        }
+        const thermostatStatusRaw = await modbusOperation(readThermostatStatus);
+        // 온도계 상태를 boolean 값으로 변환 (예: 512 -> true, 그 외 -> false)
+        const thermostatStatus = thermostatStatusRaw === 512;
+ 
+        const currentTemperature = await modbusOperation(readCurrentTemperature);
+        const settingTemperature = await modbusOperation(readSetTemperature);
+        const timestamp = new Date();
+        
+        // 현재 온도와 설정 온도, 타임스탬프를 및 온도계 상태를 데이터베이스에 저장
+        await temperaturerecords.create({
+            temperature: currentTemperature,
+            settingtemp: settingTemperature,
+            timestamp: timestamp,
+            thermostatStatus: thermostatStatus,
+        });
+        console.log(`Data saved: Current Temperature = ${currentTemperature}°C, Setting Temperature = ${settingTemperature}°C, Thermostat Status = ${thermostatStatus ? 'ON' : 'OFF'} at ${timestamp}`);
+
     } catch (error) {
         console.error("Failed to save temperature data:", error);
     }
 }
-
 
 // 주기적 저장을 시작하는 함수
 function startPeriodicSave() {
