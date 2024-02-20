@@ -5,7 +5,7 @@ const SettingContext = createContext();
 export const useSettings = () => useContext(SettingContext);
 
 export const SettingProvider = ({ children }) => {
-    const [refreshInterval, setRefreshInterval] = useState(10000); // 예시 초기값
+    const [refreshInterval, setRefreshInterval] = useState(10000);
     const [graphSetMax, setGraphSetMax] = useState(80);
     const [graphSetMin, setGraphSetMin] = useState(0);
     const [color, setColor] = useState('rgb(75, 192, 192)')
