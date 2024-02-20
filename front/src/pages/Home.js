@@ -53,11 +53,12 @@ const Home = () => {
     const [settingTempData, setSettingTempData] = useState([]); // 설정 온도값 배열
 
     const { isDark } = useContext(ThemeContext);
+    const [isLoading, setIsLoading] = useState(true); // 데이터 로딩 상태 관리
     const { refreshInterval, graphSetMax, graphSetMin, color, darkcolor } = useSettings();
 
     // 상한값과 하한값 정의
-    const MAX_TEMP = 60;
-    const MIN_TEMP = 10;
+    const MAX_TEMP = 75;
+    const MIN_TEMP = 0;
 
     // 초기 데이터 로드 및 주기적 업데이트 로직 통합
     useEffect(() => {
@@ -68,11 +69,13 @@ const Home = () => {
                 console.log("API Response:", response);
                 
 
-                const latestRecords = response.data;
+                const latestRecords = response.data.reverse();
+
+                console.log("reverse data", latestRecords);
                 
                 // 현재 온도 및 설정 온도 데이터 업데이트
                 const newCurrentTempData = latestRecords.map(record => {
-                    console.log(record.timestamp); // 여기에 콘솔 로그 추가
+                    console.log(record.timestamp); 
                     return {
                         x: moment(record.timestamp).valueOf(),
                         // x: moment(record.timestamp).local().format('HH:mm:ss')
@@ -90,6 +93,17 @@ const Home = () => {
 
                 setCurrentTempData(newCurrentTempData);
                 setSettingTempData(newSettingTempData);
+
+
+                // 현재온도 초기화면 텍스트 출력을 위한 api요청
+                const currentTempResponse = await readCurrentTemperature();
+                setCurrentTemp(currentTempResponse.data);
+
+                // 설정온도 초기화면 텍스트 출력을 위한 api요청
+                const settingTempResponse = await readSettingTemperature();
+                setSettingTemp(settingTempResponse.data);
+
+
             } catch (error) {
                 console.error('Error fetching initial temperature records:', error);
             }
@@ -100,22 +114,29 @@ const Home = () => {
             try {
                 // 현재 온도 읽기
                 const currentTempResponse = await readCurrentTemperature();
-                console.log("Current Temperature Response:", currentTempResponse.data);
                 setCurrentTemp(currentTempResponse.data);
+                console.log(moment().valueOf());
                 setCurrentTempData(prevData => [...prevData, { x: moment().valueOf(), y: currentTempResponse.data }].slice(-60));
+                console.log(currentTempData);
 
                 // 설정 온도 읽기
                 const settingTempResponse = await readSettingTemperature();
-                console.log("Setting Temperature Response:", settingTempResponse.data);
                 setSettingTemp(settingTempResponse.data);
                 setSettingTempData(prevData => [...prevData, { x: moment().valueOf(), y: settingTempResponse.data }].slice(-60));
+
+                // 온도계 상태 읽기
+                const thermostatStatus = await readThermostatStatus();
+                setThermostatStatus(thermostatStatus.data);
+
             } catch (error) {
                 console.error('Error updating temperature data:', error);
             }
         };
 
-        // 초기 데이터 로드
-        fetchInitialData();
+        // 데이터 로딩이 완료되면 로딩 상태 업데이트
+        fetchInitialData().then(() => {
+            setIsLoading(false); // 데이터 로딩 완료
+        });
 
         // 주기적 업데이트 설정
         const intervalId = setInterval(() => {
@@ -124,17 +145,24 @@ const Home = () => {
 
         // 클린업 함수
         return () => clearInterval(intervalId);
+        // 데이터 로딩이 완료되면 로딩 상태 업데이트
+
     }, [refreshInterval]); // 의존성 배열에 refreshInterval 추가
     
 
-    // 온도계 상태 읽어오기
+    // 온도계 상태를 변경되었을 때 읽어오기
     useEffect(() => {
         readThermostatStatus().then(response => {
             setThermostatStatus(response.data);
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
 
-
+    useEffect(() => {
+        // 상태 업데이트가 반영된 후 실행될 로직
+        console.log("배열에 넣은 현재 온도 데이터", currentTempData);
+        console.log("배열에 넣은 설정 온도 데이터", settingTempData);
+      }, [currentTempData, settingTempData]); // currentTempData와 settingTempData가 변경될 때마다 이 useEffect가 실행됩니다.
+      
     const handleSetTempSubmit = () => {
         const value = parseFloat(setTemp); // 입력값을 숫자로 변환
         // 입력값이 상한값과 하한값 사이에 있는지 검증
@@ -278,7 +306,13 @@ const Home = () => {
                         </StatusItem>
                     </StatusContainer>
                     <div>
-                        <Line data={chartData} options={chartOptions} />
+                        {!isLoading ? (
+                            // 데이터 로딩이 완료되었을 때 차트 렌더링
+                            <Line data={chartData} options={chartOptions} />
+                        ) : (
+                            // 데이터 로딩 중 표시할 UI (예: 로딩 스피너)
+                            <div>Loading...</div>
+                        )}
                     </div>
                     <Name isDark={isDark}>온도 제어</Name>
                     <ControlContainer>
