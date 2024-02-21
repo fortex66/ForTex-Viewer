@@ -66,30 +66,22 @@ const Home = () => {
         const fetchInitialData = async () => {
             try {
                 const response = await getLatestTemperatureRecords();
-                console.log("API Response:", response);
                 
-
                 const latestRecords = response.data.reverse();
-
-                console.log("reverse data", latestRecords);
                 
                 // 현재 온도 및 설정 온도 데이터 업데이트
                 const newCurrentTempData = latestRecords.map(record => {
-                    console.log(record.timestamp); 
                     return {
                         x: moment(record.timestamp).valueOf(),
-                        // x: moment(record.timestamp).local().format('HH:mm:ss')
                         y: record.temperature,
                     };
                 });
 
-                console.log("New Current Temperature Data:", newCurrentTempData);
 
                 const newSettingTempData = latestRecords.map(record => ({
                     x: moment(record.timestamp).valueOf(),
                     y: record.settingtemp,
                 }));
-                console.log("New Setting Temperature Data:", newSettingTempData);
 
                 setCurrentTempData(newCurrentTempData);
                 setSettingTempData(newSettingTempData);
@@ -115,9 +107,7 @@ const Home = () => {
                 // 현재 온도 읽기
                 const currentTempResponse = await readCurrentTemperature();
                 setCurrentTemp(currentTempResponse.data);
-                console.log(moment().valueOf());
                 setCurrentTempData(prevData => [...prevData, { x: moment().valueOf(), y: currentTempResponse.data }].slice(-60));
-                console.log(currentTempData);
 
                 // 설정 온도 읽기
                 const settingTempResponse = await readSettingTemperature();
@@ -157,12 +147,7 @@ const Home = () => {
         }).catch(error => console.error('Error:', error));
     }, [tempStatus]);
 
-    useEffect(() => {
-        // 상태 업데이트가 반영된 후 실행될 로직
-        console.log("배열에 넣은 현재 온도 데이터", currentTempData);
-        console.log("배열에 넣은 설정 온도 데이터", settingTempData);
-      }, [currentTempData, settingTempData]); // currentTempData와 settingTempData가 변경될 때마다 이 useEffect가 실행됩니다.
-      
+
     const handleSetTempSubmit = () => {
         const value = parseFloat(setTemp); // 입력값을 숫자로 변환
         // 입력값이 상한값과 하한값 사이에 있는지 검증
@@ -174,7 +159,6 @@ const Home = () => {
     
         // API 호출을 위한 온도 값 조정 (예시에서는 °C 값을 10배하여 전송)
         writeSetTemperature(value * 10).then(response => {
-            console.log('Set temperature:', response.data);
             // 설정 온도 상태 업데이트
             setSettingTemp(value); // 화면에 바로 반영될 설정 온도를 업데이트
             // 그래프 데이터에 설정 온도를 추가
@@ -196,7 +180,6 @@ const Home = () => {
     // 온도계 Start / Run 변경
     const handleThermostatControl = (control) => {
         writeThermostatControl(control).then(response => {
-            console.log('Thermostat control:', response.data);
             setTempStatus(prev => !prev);
         }).catch(error => console.error('Error:', error));
     };
