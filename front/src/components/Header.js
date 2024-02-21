@@ -21,9 +21,9 @@ const Header = () => {
         <Title>ForTex-Viewer</Title>
         <Mode>
           {isDark ? (
-            <FontAwesomeIcon icon={faSun} onClick={handleMode} color="#FEFEFE" size="1.5em"/>
+            <FontAwesomeIcon icon={faSun} onClick={handleMode} color="#FEFEFE" size="2x"/>
           ) : (
-            <FontAwesomeIcon icon={faMoon} onClick={handleMode} color="#FEFEFE" size="1.5em"/>
+            <FontAwesomeIcon icon={faMoon} onClick={handleMode} color="#FEFEFE" size="2x"/>
           )}
           
           

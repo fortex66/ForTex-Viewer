@@ -96,7 +96,6 @@ exports.getLatestTemperatureRecords = async (req, res) => {
             order: [['timestamp', 'DESC']], // 최신 기록부터 정렬
         });
         res.json(latestRecords); // 조회된 데이터를 JSON 형태로 응답
-        console.log(latestRecords);
     } catch (error) {
         console.error("Error fetching latest temperature records:", error);
         res.status(500).send("Error fetching latest temperature records");
