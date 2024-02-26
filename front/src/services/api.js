@@ -36,3 +36,8 @@ export const readTemperatureHistory = async (startDate, endDate, interval ) => {
 export const getLatestTemperatureRecords = async () => {
     return axios.get('/api/modbus/latest-temperature-records');
 };
+
+// 방문자 수 API 호출
+export const getVisitorLogs = async () => {
+    return axios.get('/api/modbus/visitors-stats');
+}

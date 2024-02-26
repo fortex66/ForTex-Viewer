@@ -1,6 +1,9 @@
 const modbusClient = require('../utils/modbusClient');
-const TemperatureRecord = require('../models/temperatureRecord'); // 모델 임포트
+const TemperatureRecord = require('../models/temperatureRecord'); 
+const visitorLogs = require('../models/visitorLogs');
+const sequelize = require('../database/database'); // 실제 경로에 맞게 조정
 const { Op } = require('sequelize'); // Sequelize 연산자 임포트
+const { v4: uuidv4 } = require('uuid');
 
 
 exports.readCurrentTemperature = async (req, res) => {
@@ -11,7 +14,6 @@ exports.readCurrentTemperature = async (req, res) => {
         res.status(500).send(error.message);
     }
 };
-
 
 
 exports.readSetTemperature = async (req, res) => {
@@ -101,3 +103,76 @@ exports.getLatestTemperatureRecords = async (req, res) => {
         res.status(500).send("Error fetching latest temperature records");
     }
 };
+
+// 방문자 기록 함수 추가
+exports.recordVisitor = async (req, res, next) => {
+    try {
+        let visitorId = req.cookies.visitorId;
+        let isFirstVisit = false; // 첫 방문 여부를 판단하는 플래그
+
+        // 쿠키에 visitorId가 없으면 새로 생성하고 쿠키에 저장
+        if (!visitorId) {
+            visitorId = uuidv4();
+            isFirstVisit = true; // 새로운 visitorId를 발급받았으므로 첫 방문으로 판단
+            res.cookie('visitorId', visitorId, { maxAge: 24 * 60 * 60 * 1000, httpOnly: true }); // 24시간 동안 유효, HTTP 전용
+        }
+
+        // 첫 방문일 때만 방문 기록을 데이터베이스에 저장
+        if (isFirstVisit) {
+            await visitorLogs.create({
+                visitor_id: visitorId,
+                visit_timestamp: new Date() // 현재 시간 사용
+            });
+        }
+
+        next(); // 다음 미들웨어 또는 라우트 핸들러로 이동
+    } catch (error) {
+        console.error('Error recording visitor:', error);
+        res.status(500).send("Internal Server Error");
+    }
+};
+
+const getTotalVisitors = async () => {
+    const totalVisitorsCount = await visitorLogs.count({
+        distinct: true, // 고유한 visitor_id만 카운트
+        col: 'visitor_id' // 고유성을 확인할 컬럼 지정
+    });
+
+    return totalVisitorsCount;
+};
+
+
+const getTodayVisitors = async () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // 오늘의 시작 시간(자정) 설정
+
+    const tomorrow = new Date();
+    tomorrow.setHours(24, 0, 0, 0); // 다음 날의 시작 시간(자정) 설정
+
+    const todayVisitorsCount = await visitorLogs.count({
+        distinct: true,
+        col: 'visitor_id',
+        where: {
+            visit_timestamp: {
+                [Op.gte]: today, // 오늘 자정 이후
+                [Op.lt]: tomorrow // 다음 날 자정 전
+            }
+        }
+    });
+
+    return todayVisitorsCount;
+};
+
+exports.getVisitorStats = async (req, res) => {
+    try {
+        const totalVisitors = await getTotalVisitors();
+        const todayVisitors = await getTodayVisitors();
+        res.json({ totalVisitors, todayVisitors });
+    } catch (error) {
+        console.error("Error fetching visitor stats:", error);
+        console.error(error.stack);
+        res.status(500).send("Internal Server Error");
+    }
+};
+
+
