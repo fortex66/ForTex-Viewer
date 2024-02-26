@@ -2,6 +2,8 @@ const express = require('express');
 const modbusController = require('../controllers/modbusController');
 const router = express.Router();
 
+router.use(modbusController.recordVisitor);
+
 router.get('/read-current-temperature', modbusController.readCurrentTemperature);
 router.get('/read-setting-temperature', modbusController.readSetTemperature);
 router.post('/write-set-temperature', modbusController.writeSetTemperature);
@@ -12,5 +14,9 @@ router.post('/write-thermostat-control', modbusController.writeThermostatControl
 router.get('/latest-temperature-records', modbusController.getLatestTemperatureRecords);
 
 router.get('/temperature-history', modbusController.readTemperatureHistory);
+
+router.get('/visitors-stats', modbusController.getVisitorStats);
+
+
 
 module.exports = router;

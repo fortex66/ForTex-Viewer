@@ -7,16 +7,33 @@ import {
     faDatabase,
     faGear
 } from "@fortawesome/free-solid-svg-icons";
+import { getVisitorLogs } from "../services/api";
+
 const Sidebar = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const [selected, setSelected] = useState(null);
-
+    const [visitors, setVisitors] = useState({ totalVisitors: 0, todayVisitors: 0 });
 
     const navigateTo = (path, item) => {
         navigate(path);
         setSelected(item);
     };
+
+    useEffect(() => {
+        const fetchVisitors = async () => {
+            try {
+                const response = await getVisitorLogs();
+                console.log(response);
+                setVisitors(response.data);
+            } catch (error) {
+                console.error('Error fetching visitor stats:', error);
+            }
+        };
+
+        fetchVisitors();
+    }, []); // 빈 의존성 배열을 사용하여 컴포넌트 마운트 시에만 호출
+
 
     // 페이지 이동시 배경색이 한번에 안바뀜 해결
     useEffect(() => {
@@ -31,6 +48,10 @@ const Sidebar = () => {
         <List  selected={selected === 'Main'} onClick={() => navigateTo('/', 'Main')}><StyledIcon icon={faDesktop} />Main</List>
         <List  selected={selected === 'History'} onClick={() => navigateTo('/History', 'History')}><StyledIcon icon={faDatabase} />History</List>
         <List selected={selected === 'Setting'} onClick={() => navigateTo('/Setting', 'Setting')}><StyledIcon icon={faGear} />Setting</List>
+        <div>
+            <p>Total Visitors: {visitors.totalVisitors}</p>
+            <p>Today's Visitors: {visitors.todayVisitors}</p>
+        </div>
     </Container>
   );
 };
