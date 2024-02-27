@@ -48,10 +48,16 @@ const Sidebar = () => {
         <List  selected={selected === 'Main'} onClick={() => navigateTo('/', 'Main')}><StyledIcon icon={faDesktop} />Main</List>
         <List  selected={selected === 'History'} onClick={() => navigateTo('/History', 'History')}><StyledIcon icon={faDatabase} />History</List>
         <List selected={selected === 'Setting'} onClick={() => navigateTo('/Setting', 'Setting')}><StyledIcon icon={faGear} />Setting</List>
-        <div>
-            <p>Total Visitors: {visitors.totalVisitors}</p>
-            <p>Today's Visitors: {visitors.todayVisitors}</p>
-        </div>
+        <Visitor>
+            <VisitorItem>
+                <p>전체</p>
+                <p>{visitors.totalVisitors}</p>
+            </VisitorItem>
+            <VisitorItem>
+                <p>오늘</p>
+                <p>{visitors.todayVisitors}</p>
+            </VisitorItem>
+        </Visitor>
     </Container>
   );
 };
@@ -77,5 +83,23 @@ const List = styled.div`
 const StyledIcon = styled(FontAwesomeIcon)`
     margin-right: 10px; // 아이콘과 텍스트 사이 간격 조정
 `;
+
+const Visitor = styled.div`
+    display: flex;
+    justify-content: space-around; // 컨텐츠를 양 끝에 배치하여 공간을 균등하게 분할
+    padding: 20px; // 상하좌우 패딩
+    background-color: #484A4F; // 배경색
+    color: #FEFEFE; // 텍스트 색상
+    margin: 20px; // 주변 여백
+    border-radius: 10px; // 테두리 둥글게
+`;
+
+// `Visitor` 컴포넌트 내부에 사용할 각 항목을 위한 스타일 컴포넌트
+const VisitorItem = styled.div`
+    display: flex;
+    flex-direction: column; // 항목 내부 텍스트를 세로로 정렬
+    align-items: center; // 센터 정렬
+`;
+
 
 export default Sidebar;
