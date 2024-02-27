@@ -2,7 +2,6 @@ const express = require('express');
 const modbusController = require('../controllers/modbusController');
 const router = express.Router();
 
-router.use(modbusController.recordVisitor);
 
 router.get('/read-current-temperature', modbusController.readCurrentTemperature);
 router.get('/read-setting-temperature', modbusController.readSetTemperature);

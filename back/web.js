@@ -6,14 +6,15 @@ const path = require('path');
 const modbusClient = require('./utils/modbusClient');
 const sequelize = require('./database/database');
 const cookieParser = require('cookie-parser');
+const visitRoutes = require('./routes/visitRoutes'); // 새로 추가한 라우트 파일
 
 app.use(cookieParser());
-
 app.use(bodyParser.json());
-app.use('/api/modbus', modbusRoutes);
-
-
 app.use(express.static(path.join(__dirname, "/build")));
+app.use('/api/visit', visitRoutes);
+
+
+app.use('/api/modbus', modbusRoutes);
 
 app.get("/", function (req, res) {
     res.sendFile(path.join(__dirname, "/build/index.html"));

@@ -106,6 +106,8 @@ async function modbusOperation(operationFunc, ...args) {
 // D1200 : PLC 온도 제어 시작 (1) 종료 (0)
 // D1105 : h200 = TIC on 상태 / h300 = TIC off 상태
 
+
+
 // D1000 레지스터 읽기 (현재 온도)
 async function readCurrentTemperature() {
     return await modbusOperation(async () => {
@@ -173,6 +175,7 @@ async function saveTemperaturePeriodically() {
 function startPeriodicSave() {
     setInterval(saveTemperaturePeriodically, saveInterval);
 }
+
 
 
 
