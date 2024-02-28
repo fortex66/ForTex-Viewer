@@ -69,7 +69,6 @@ exports.readTemperatureHistory = async (req, res) => {
             },
             order: [['timestamp', 'ASC']]
         });
-        console.log(intervalInSeconds);
 
         // 필요한 경우 데이터 다운샘플링 (간격에 따라 데이터 필터링)
         const filteredData = []; // 다운샘플링된 데이터를 저장할 배열
@@ -82,7 +81,7 @@ exports.readTemperatureHistory = async (req, res) => {
                 lastTimestamp = currentTimestamp; // 마지막으로 추가된 데이터 포인트를 현재 데이터 포인트의 타임스탬프로 업데이트
             }
         });
-
+        
         res.json(filteredData);
     } catch (error) {
         console.error(error);

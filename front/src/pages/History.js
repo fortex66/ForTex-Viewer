@@ -44,6 +44,8 @@ const History = () => {
             const endTime = moment(endDateTime);
             const chartLabels = [];
             const chartData = new Array(Math.ceil(endTime.diff(currentTime, 'seconds') / interval)).fill(null);
+            let settingData = new Array(chartData.length).fill(null); // 설정 온도 데이터를 위한 배열 초기화
+
 
             // 가장 가까운 데이터 포인트 찾기
             response.data.forEach(dataPoint => {
@@ -55,6 +57,12 @@ const History = () => {
                     // 현재 데이터 포인트로 교체
                     chartData[closestIndex] = { temperature: dataPoint.temperature, time: dataTime };
                 }
+
+                // 설정 온도 데이터 업데이트 (thermostatStatus가 true인 경우에만)
+                if (dataPoint.thermostatStatus && (!settingData[closestIndex] || Math.abs(settingData[closestIndex]?.time?.diff(dataTime)) > Math.abs(dataTime.diff(currentTime.clone().add(interval * closestIndex, 'seconds'))))) {
+                    settingData[closestIndex] = { settingtemp: dataPoint.settingtemp, time: dataTime };
+                }
+
             });
 
             calculateTemperatureStats(chartData); // 데이터 계산
@@ -65,7 +73,11 @@ const History = () => {
                 chartData[index] = data ? data.temperature : null;
             });
 
-            setTemperatureData({ labels: chartLabels, data: chartData });
+
+            settingData = settingData.map(data => data ? data.settingtemp : null); // thermostatStatus가 true인 경우에만 추가된 데이터 사용
+
+
+            setTemperatureData({ labels: chartLabels, temprature: chartData, settingtemp: settingData });
             
 
             setVerify(true); // 조회가 완료되면 캡쳐 및 파일 다운 가능
@@ -78,7 +90,6 @@ const History = () => {
     // 조회된 데이터의 계산
     const calculateTemperatureStats = (data) => {
         const validData = data.filter((dataPoint) => dataPoint !== null && dataPoint.temperature !== null).map(dataPoint => dataPoint.temperature);
-        console.log(validData);
         if (validData.length > 0) {
             const max = Math.max(...validData);
             const min = Math.min(...validData);
@@ -129,15 +140,26 @@ const History = () => {
     const lineChartData = {
         labels: temperatureData.labels,
         datasets: [{
-            label: '온도',
-            data: temperatureData.data,
+            label: '현재 온도',
+            data: temperatureData.temprature,
             fill: false,
             backgroundColor: isDark ? darkcolor : color,
             borderColor: isDark ? darkcolor : color,
             tension: 0.1,
             pointRadius: 3, // 데이터 포인트의 반지름을 5픽셀로 설정
             pointHoverRadius: 7, // 마우스 오버 시 데이터 포인트의 반지름을 7픽셀로 설정
-        }]
+        },
+        {
+            label: '설정 온도',
+            data: temperatureData.settingtemp,
+            fill: false,
+            borderColor: '#FF6384', // 설정 온도의 선 색상을 다르게 설정
+            backgroundColor: '#FF6384',
+            tension: 0.1,
+            pointRadius: 3, // 데이터 포인트의 반지름을 5픽셀로 설정
+            pointHoverRadius: 7, // 마우스 오버 시 데이터 포인트의 반지름을 7픽셀로 설정
+        }
+    ]
     };
 
     const chartOptions = {
